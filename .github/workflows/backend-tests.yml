@@ -1,0 +1,52 @@
+name: Backend tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    name: pytest (engine + API)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Import check
+        working-directory: backend
+        run: python -c "import server"
+
+      - name: Start the API
+        working-directory: backend
+        env:
+          MONGO_URL: mongodb://localhost:27017
+          DB_NAME: sentinel_ci
+          CORS_ORIGINS: "*"
+          SENTINEL_DB_PATH: data/ci.db
+        run: |
+          uvicorn server:app --host 127.0.0.1 --port 8001 &
+          for i in $(seq 30); do
+            curl -sf http://127.0.0.1:8001/api/ > /dev/null && break
+            sleep 1
+          done
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          BACKEND_URL: http://127.0.0.1:8001
+          SENTINEL_DB_PATH: data/ci.db
+        run: pytest

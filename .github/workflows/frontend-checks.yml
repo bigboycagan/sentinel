@@ -1,0 +1,33 @@
+name: Frontend checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  typecheck-and-build:
+    name: typecheck + build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: frontend
+        run: yarn typecheck
+
+      - name: Build
+        working-directory: frontend
+        run: yarn build

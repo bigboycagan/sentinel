@@ -1,0 +1,274 @@
+{
+  "project_name": "SENTINEL",
+  "archetype": "THE PERFORMANCE PRO / TACTICAL SECURITY MINIMALISM",
+  "theme": "dark",
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#0B0F12",
+        "on_bg": "#F1F5F9",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "border": "#1E293B",
+          "border_focus": "#10B981",
+          "link": "#34D399"
+        }
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#111827",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "border": "#1F2937",
+          "border_highlight": "#374151"
+        }
+      },
+      {
+        "name": "panel_secondary",
+        "kind": "solid",
+        "bg": "#0F172A",
+        "on_bg": "#F1F5F9",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "editor_surface",
+        "kind": "solid",
+        "bg": "#090D11",
+        "on_bg": "#E2E8F0",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "gutter_bg": "#0B0F14",
+          "gutter_text": "#475569",
+          "active_line": "#131D24",
+          "selection": "#1E3A4B",
+          "issue_marker_critical": "#EF4444",
+          "issue_marker_high": "#F97316",
+          "issue_marker_medium": "#F59E0B",
+          "issue_marker_low": "#3B82F6",
+          "issue_marker_info": "#64748B"
+        }
+      },
+      {
+        "name": "card_elevated",
+        "kind": "solid",
+        "bg": "#161F2E",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "badge_critical",
+        "kind": "solid",
+        "bg": "#450A0A",
+        "on_bg": "#FECACA",
+        "on_bg_muted": "#F87171"
+      },
+      {
+        "name": "badge_high",
+        "kind": "solid",
+        "bg": "#431407",
+        "on_bg": "#FFEDD5",
+        "on_bg_muted": "#FB923C"
+      },
+      {
+        "name": "badge_medium",
+        "kind": "solid",
+        "bg": "#422006",
+        "on_bg": "#FEF3C7",
+        "on_bg_muted": "#FBBF24"
+      },
+      {
+        "name": "badge_low",
+        "kind": "solid",
+        "bg": "#172554",
+        "on_bg": "#DBEAFE",
+        "on_bg_muted": "#60A5FA"
+      },
+      {
+        "name": "badge_info",
+        "kind": "solid",
+        "bg": "#1E293B",
+        "on_bg": "#E2E8F0",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "badge_privacy",
+        "kind": "solid",
+        "bg": "#064E3B",
+        "on_bg": "#D1FAE5",
+        "on_bg_muted": "#34D399"
+      },
+      {
+        "name": "inverse",
+        "kind": "solid",
+        "bg": "#F8FAFC",
+        "on_bg": "#0B0F12",
+        "on_bg_muted": "#334155"
+      },
+      {
+        "name": "header_glass",
+        "kind": "glass",
+        "contrast_against": "#0B0F12",
+        "guarantee": "backdrop-blur-xl bg-[#0B0F12]/85 border-b border-[#1E293B]",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "active_tab": "#10B981"
+        }
+      }
+    ],
+    "accent": "#10B981",
+    "on_accent": "#042F1A",
+    "accent_hover": "#059669",
+    "severity_palette": {
+      "CRITICAL": {
+        "bg": "#450A0A",
+        "border": "#7F1D1D",
+        "text": "#FCA5A5",
+        "dot": "#EF4444"
+      },
+      "HIGH": {
+        "bg": "#431407",
+        "border": "#7C2D12",
+        "text": "#FDBA74",
+        "dot": "#F97316"
+      },
+      "MEDIUM": {
+        "bg": "#422006",
+        "border": "#78350F",
+        "text": "#FDE047",
+        "dot": "#F59E0B"
+      },
+      "LOW": {
+        "bg": "#172554",
+        "border": "#1E3A8A",
+        "text": "#93C5FD",
+        "dot": "#3B82F6"
+      },
+      "INFO": {
+        "bg": "#1E293B",
+        "border": "#334155",
+        "text": "#CBD5E1",
+        "dot": "#94A3B8"
+      }
+    },
+    "score_scale": {
+      "excellent": { "range": "90-100", "color": "#10B981", "label": "Secure" },
+      "good": { "range": "75-89", "color": "#34D399", "label": "Good" },
+      "fair": { "range": "50-74", "color": "#F59E0B", "label": "Needs Review" },
+      "poor": { "range": "0-49", "color": "#EF4444", "label": "Vulnerable" }
+    }
+  },
+  "typography": {
+    "font_family_heading": "Space Grotesk, sans-serif",
+    "font_family_body": "DM Sans, sans-serif",
+    "font_family_mono": "JetBrains Mono, monospace",
+    "scale_px": {
+      "display": 60,
+      "h1": 48,
+      "h2": 36,
+      "h3": 24,
+      "h4": 20,
+      "body": 16,
+      "caption": 14
+    },
+    "rules": {
+      "hero_title": "text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-100",
+      "section_title": "text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-slate-100",
+      "card_title": "text-lg sm:text-xl font-medium tracking-tight text-slate-200",
+      "body_text": "text-base text-slate-300 leading-relaxed",
+      "mono_label": "font-mono text-xs uppercase tracking-[0.18em] text-emerald-400 font-semibold",
+      "code_snippet": "font-mono text-sm leading-6"
+    }
+  },
+  "entry_surfaces": {
+    "/": "editorial developer hero — security positioning + live interactive code demo preview left, CTA + privacy architecture badge right",
+    "/dashboard": "tactical command grid — metric status counters top, recent scan stream left, category compliance radar right",
+    "/analyzer": "split IDE workspace — CodeMirror 6 code editor + upload card left, score gauges + interactive issue table and detail drawer right",
+    "/history": "telemetry audit table — search & filter bar top, historical scan records with score bars and quick actions",
+    "/rules": "security rules matrix — severity / category filter pills top, searchable card grid with rule specs and sample triggers",
+    "/settings": "precision settings panel — toggle switches for privacy parameters, rule category filters, and file size quotas"
+  },
+  "layouts": {
+    "navigation_header": {
+      "height": "h-16",
+      "style": "sticky top-0 z-50 backdrop-blur-xl bg-[#0B0F12]/85 border-b border-slate-800",
+      "elements": [
+        "Brand mark: SENTINEL with emerald shield radar icon",
+        "Nav links: Dashboard (/dashboard), Analyzer (/analyzer), History (/history), Rules (/rules), Settings (/settings)",
+        "Privacy status indicator: Green pulse dot + 'Local Engine Only'",
+        "CTA button: 'Analyze Code' (links to /analyzer)"
+      ]
+    },
+    "landing_page_grid": {
+      "hero": "grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-8 pb-16",
+      "features_bento": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-16",
+      "privacy_banner": "bg-slate-900/80 border border-emerald-950/80 rounded-xl p-8 my-12"
+    },
+    "analyzer_grid": {
+      "container": "grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-5rem)]",
+      "editor_column": "lg:col-span-6 flex flex-col gap-4",
+      "results_column": "lg:col-span-6 flex flex-col gap-4"
+    }
+  },
+  "motion": {
+    "framework": "motion/react",
+    "preset_transitions": {
+      "fade_in": "transition-opacity duration-200 ease-out",
+      "slide_up": "transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)",
+      "card_hover": "transition duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-700"
+    },
+    "score_meter_animation": "SVG stroke-dashoffset spring transition on analysis completion (duration 0.8s)",
+    "issue_drawer_slide": "slide-in from right with 300ms ease-out"
+  },
+  "accessibility": {
+    "wcag_level": "AA",
+    "focus_states": "focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+    "screen_readers": "aria-live regions for code analysis scanning status and finding count updates",
+    "color_contrast_min": "4.5:1 on all text tokens and badges",
+    "data_testids": "Strict data-testid attributes on all interactive triggers, buttons, uploads, issue rows, score meters, and settings toggles"
+  },
+  "key_components": {
+    "CodeMirrorEditor": {
+      "path": "frontend/src/components/analyzer/CodeMirrorEditor.tsx",
+      "features": ["Dark theme matching #090D11", "Line numbers", "Python syntax highlighting", "Line issue gutter markers with severity colors", "Error highlight line ribbons"]
+    },
+    "FileUploadDropzone": {
+      "path": "frontend/src/components/analyzer/FileUploadDropzone.tsx",
+      "features": [".py file accept", "File size display", "Status badge", "Clear/replace action", "Inline Python syntax pre-check warning"]
+    },
+    "ScoreGauge": {
+      "path": "frontend/src/components/analyzer/ScoreGauge.tsx",
+      "features": ["Circular SVG progress ring (0-100)", "Animated fill", "Color mapping (Green/Amber/Red)", "Sub-score progress bars for Security, Code Quality, Complexity, Maintainability"]
+    },
+    "IssueExplorer": {
+      "path": "frontend/src/components/analyzer/IssueExplorer.tsx",
+      "features": ["Severity badge filter pills", "Category dropdown filter", "Search input", "Sort by severity/line", "Click row opens slide-out detail sheet"]
+    },
+    "IssueDetailSheet": {
+      "path": "frontend/src/components/analyzer/IssueDetailSheet.tsx",
+      "features": ["Rule ID & Title", "Severity badge", "Source location (file:line:col)", "Problematic code snippet with line indicator", "Deep explanation & Remediation recommendation"]
+    },
+    "PrivacyNoticeCard": {
+      "path": "frontend/src/components/common/PrivacyNoticeCard.tsx",
+      "features": ["Shield icon with subtle emerald pulse", "Copy: 'Your source code is analyzed by SENTINEL without sending it to an external AI service.'"]
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. THEME TOKENS: Update /app/frontend/src/index.css to import '@fontsource-variable/space-grotesk' for heading and '@fontsource-variable/dm-sans' for sans body. Set dark background to #0B0F12 and panels to #111827.",
+    "2. NO EXTERNAL AI LEAKS: Ensure the static analysis is handled locally on the FastAPI backend using Python's native ast, tokenize, radon-like metrics, and custom rule matchers. Display the privacy badge prominently.",
+    "3. ERROR STATES: Handle all required error states gracefully with distinctive alert banners and data-testid attributes:",
+    "   - Unsupported file: 'Unsupported file type. SENTINEL currently supports Python files.'",
+    "   - Invalid Python: 'Unable to parse this source file. Check the syntax and try again.'",
+    "   - Empty code: 'Please provide source code to analyze.'",
+    "   - Unexpected server error: 'Something went wrong while analyzing the code.'",
+    "4. CODEMIRROR 6: Install '@uiw/react-codemirror' and '@codemirror/lang-python' if not present, and configure a tailored dark theme that matches SENTINEL's slate/emerald palette.",
+    "5. CHARTS: Use preinstalled 'recharts' with responsive containers for issue severity distribution and category breakdown radars/bars.",
+    "6. DATA-TESTID: Ensure every button, tab, link, file upload dropzone, filter dropdown, search input, issue row, score display, and setting toggle has a kebab-case data-testid (e.g. data-testid='analyze-code-btn', data-testid='upload-python-file', data-testid='overall-score-gauge', data-testid='issue-row-1', data-testid='severity-filter-critical', data-testid='clear-history-btn').",
+    "7. COMPLETE SAMPLE RULES: Provide a rich catalog of 15+ built-in SENTINEL rules covering Security (SQL injection risk, hardcoded secrets, insecure eval/exec, insecure temp files, weak hash algorithms), Code Quality (unused imports, wildcard imports, broad exception handling), Complexity (high cyclomatic complexity, deeply nested blocks), and Maintainability (missing docstrings, overly long functions, excessive arguments).",
+    "8. SAMPLE SNIPPETS: Include ready-to-load demo snippets in the Analyzer (e.g., 'Vulnerable Flask API snippet', 'Clean Python Class snippet', 'Complex Algorithmic snippet') so the user can test analysis in one click."
+  ]
+}

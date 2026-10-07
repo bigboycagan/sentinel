@@ -1,0 +1,51 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend-lint:
+    name: oxlint (frontend)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        working-directory: frontend
+        run: yarn lint
+
+  backend-lint:
+    name: ruff (backend)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: python -m pip install ruff
+
+      # Ruff lints SENTINEL's own source here in CI. It is NOT a runtime
+      # dependency of the analysis engine — SENTINEL analyzes user code with
+      # its own AST-based rule engine.
+      - name: Lint
+        working-directory: backend
+        run: ruff check . --select E9,F63,F7,F82,F401 --exclude tests
