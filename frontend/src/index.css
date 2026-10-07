@@ -169,3 +169,75 @@
   font-family: var(--font-mono) !important;
   line-height: 1.6;
 }
+
+/* ---------------------------------------------------------------------------
+   Light-theme compatibility layer.
+
+   SENTINEL's UI is authored dark-first: components use the explicit slate
+   palette (text-slate-100, bg-slate-900/50, border-slate-800 …) to hit the
+   exact tactical surfaces the design calls for. Those literals would be
+   illegible on a light background, so light mode remaps them here — in the
+   single theming entry point — rather than scattering `dark:` variants
+   through every component.
+
+   `html:not(.dark) .x` outranks `.x` on specificity, so no !important is
+   needed. Keep this list in sync with the palette classes the components
+   actually use. The code editor keeps its own dark surface in both themes,
+   which is normal for an IDE pane and keeps syntax highlighting readable.
+   --------------------------------------------------------------------------- */
+
+html:not(.dark) .text-slate-50,
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200 {
+  color: #0f172a;
+}
+html:not(.dark) .text-slate-300 {
+  color: #1e293b;
+}
+html:not(.dark) .text-slate-400 {
+  color: #334155;
+}
+html:not(.dark) .text-slate-500 {
+  color: #475569;
+}
+html:not(.dark) .text-slate-600 {
+  color: #64748b;
+}
+html:not(.dark) .text-slate-800 {
+  color: #0f172a;
+}
+
+html:not(.dark) .bg-slate-900\/40,
+html:not(.dark) .bg-slate-900\/50,
+html:not(.dark) .bg-slate-900\/70 {
+  background-color: #ffffff;
+}
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-950\/30,
+html:not(.dark) .bg-slate-950\/40 {
+  background-color: #f8fafc;
+}
+html:not(.dark) .bg-slate-800 {
+  background-color: #e2e8f0;
+}
+
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/70,
+html:not(.dark) .border-slate-800\/80 {
+  border-color: #e2e8f0;
+}
+html:not(.dark) .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0;
+}
+
+/* Hover lift on cards: keep a visible edge instead of darkening. */
+html:not(.dark) .hover\:border-slate-700:hover {
+  border-color: #cbd5e1;
+}
+
+/* The editor pane stays dark in both themes — exclude it from the remap. */
+html:not(.dark) .cm-editor .text-slate-500,
+html:not(.dark) .cm-editor .text-slate-600 {
+  color: inherit;
+}
