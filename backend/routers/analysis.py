@@ -9,12 +9,19 @@ import asyncio
 import os
 import re
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 
-from analyzers.engine import EmptySourceError, UnsupportedLanguageError, analyze_code
+from analyzers.engine import (
+    EmptySourceError,
+    UnsupportedLanguageError,
+    all_extensions,
+    analyze_code,
+    language_for_file,
+    supported_languages,
+)
 from lib import store
 from lib import rate_limit as limiter
-from models.analysis import AnalysisReport, AnalyzeRequest
+from models.analysis import AnalysisReport, AnalyzeRequest, LanguageOption
 
 router = APIRouter()
 
@@ -57,6 +64,15 @@ async def analyze_payload(code: str, file_name: str, language: str) -> AnalysisR
     return report
 
 
+@router.get("/languages", response_model=list[LanguageOption])
+async def list_languages() -> list[LanguageOption]:
+    """Languages the engine can analyze — the frontend selector is built from this."""
+    return [
+        LanguageOption(id=info.id, label=info.label, extensions=list(info.extensions))
+        for info in supported_languages()
+    ]
+
+
 @router.post("/analyze", response_model=AnalysisReport)
 async def analyze(payload: AnalyzeRequest, _rl: None = Depends(rate_limit)) -> AnalysisReport:
     file_name = sanitize_file_name(payload.file_name)
@@ -66,17 +82,20 @@ async def analyze(payload: AnalyzeRequest, _rl: None = Depends(rate_limit)) -> A
 @router.post("/analyze/upload", response_model=AnalysisReport)
 async def analyze_upload(
     file: UploadFile,
-    language: str = Form("python"),
     _rl: None = Depends(rate_limit),
 ) -> AnalysisReport:
     settings = await asyncio.to_thread(store.get_settings)
     max_bytes = int(settings["max_file_size_bytes"])
 
     raw_name = file.filename or ""
-    if not raw_name.lower().endswith(".py"):
+    # The extension decides the analyzer, so an unsupported one is rejected
+    # before a single byte is parsed.
+    detected = language_for_file(raw_name)
+    if detected is None:
+        supported = ", ".join(all_extensions())
         raise HTTPException(
             status_code=400,
-            detail="Unsupported file type. SENTINEL currently supports Python files.",
+            detail=f"Unsupported file type. SENTINEL currently supports: {supported}.",
         )
 
     content = await file.read(max_bytes + 1)
@@ -96,4 +115,6 @@ async def analyze_upload(
             detail="The uploaded file is not valid UTF-8 text and cannot be analyzed.",
         )
 
-    return await analyze_payload(code, sanitize_file_name(raw_name, "uploaded.py"), language)
+    return await analyze_payload(
+        code, sanitize_file_name(raw_name, "uploaded.py"), detected
+    )

@@ -4,6 +4,73 @@ All notable changes to SENTINEL are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-01-07
+
+Second language family: **JavaScript and TypeScript**, plus the official brand
+mark. Still no AI.
+
+### Added
+
+- **JavaScript / TypeScript analyzer** (`backend/analyzers/javascript/`) built
+  on tree-sitter with the JavaScript, TypeScript and TSX grammars. JSX and TSX
+  parse correctly; the analyzed code is never executed (tree-sitter is a
+  parser with no evaluation facility, and no Node.js runtime is involved).
+- **38 new rules** (70 total):
+  - 17 security rules (`JS-SEC001`–`JS-SEC017`) — hardcoded passwords and
+    secrets (incl. JWT shapes), `eval`, implied eval (`new Function`,
+    string timers), SQL injection, command injection, XSS sinks
+    (`innerHTML`/`document.write`/`insertAdjacentHTML`),
+    `dangerouslySetInnerHTML`, weak hashes, `Math.random()` for secrets,
+    disabled TLS verification, dynamic paths, dynamic `require`/`import`,
+    `vm` execution, wildcard `postMessage`, credentials in web storage,
+    executable URL literals.
+  - 13 code-quality rules (`JS-QUA001`–`JS-QUA013`) — unused variables and
+    imports, unreachable code, excessive nesting, long functions and files,
+    poor naming, empty `catch`, loose equality, `var`, leftover `console`,
+    `debugger`, TODO markers.
+  - 2 TypeScript-only rules (`TS-QUA001`–`TS-QUA002`) — explicit `any` and
+    `@ts-ignore`/`@ts-nocheck`/`@ts-expect-error` suppressions.
+  - 2 complexity rules and 4 maintainability rules (`JS-CPL*`, `JS-MNT*`),
+    including a too-many-parameters check.
+- **`GET /api/languages`** — the engine's language registry, with extensions.
+  The frontend language selector and upload validation are derived from it
+  rather than hardcoded.
+- **Upload routing by extension** — `.py`, `.pyi`, `.js`, `.jsx`, `.mjs`,
+  `.cjs`, `.ts`, `.tsx`, `.mts`, `.cts`. The extension, not a client-supplied
+  field, selects the analyzer.
+- **Frontend multi-language support** — language selector, per-language demo
+  snippets (vulnerable Express API, unsafe React component, clean TypeScript
+  module), CodeMirror syntax modes for JS/TS/JSX/TSX, and a language filter
+  plus language badge on the Rules page.
+- **Brand mark** — the official SENTINEL logo in the header (theme-aware) and
+  as the favicon set, generated reproducibly by `scripts/build_logo_assets.py`.
+- **56 new tests** (108 total), including `tests/test_engine_javascript.py`
+  which covers the JS/TS engine independently of the UI.
+
+### Changed
+
+- Report assembly, severity counting and scoring extracted to
+  `backend/analyzers/report.py` and shared by every analyzer (previously
+  inline in the Python analyzer). Scoring behaviour is unchanged.
+- `analyzers/engine.py` now owns a language registry; adding a language is a
+  single map entry.
+- Upload rejection message now lists every supported extension instead of
+  naming Python only.
+
+### Fixed
+
+- JS/TS function and class counts no longer double-count: the grammar emits
+  the bare `function`/`class` keyword as a node, so metrics now require a
+  named node with children.
+- The unused-variable rule no longer treats locals inside an *exported*
+  function as exported, which had suppressed valid findings.
+
+### Dependencies
+
+- Added `tree-sitter`, `tree-sitter-javascript`, `tree-sitter-typescript`
+  (backend) and `@codemirror/lang-javascript` (frontend). No AI service, no
+  analysis API, no Node.js runtime on the backend.
+
 ## [1.0.0] — 2026-01-01
 
 The first release: a working Python static-analysis engine with a full

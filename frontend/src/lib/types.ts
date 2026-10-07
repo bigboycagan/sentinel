@@ -79,6 +79,13 @@ export interface AnalyzeRequest {
   language: string;
 }
 
+/** backend/models/analysis.py :: LanguageOption */
+export interface LanguageOption {
+  id: string;
+  label: string;
+  extensions: string[];
+}
+
 /** backend/models/analysis.py :: RuleMeta */
 export interface RuleMeta {
   rule_id: string;

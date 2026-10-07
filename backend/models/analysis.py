@@ -88,3 +88,9 @@ class RuleMeta(BaseModel):
     description: str
     recommendation: str
     language: str
+
+
+class LanguageOption(BaseModel):
+    id: str
+    label: str
+    extensions: list[str]

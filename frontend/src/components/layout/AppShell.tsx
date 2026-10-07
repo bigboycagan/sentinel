@@ -1,5 +1,4 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +13,21 @@ const NAV = [
 export function BrandMark({ to = "/" }: { to?: string }) {
   return (
     <Link to={to} className="group flex items-center gap-2.5" data-testid="brand-home-link">
-      <span className="relative flex size-8 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10">
-        <ShieldCheck className="size-4 text-emerald-400" strokeWidth={2.2} />
-      </span>
+      {/* Two files so the mark stays legible in both themes. */}
+      <img
+        src="/sentinel-mark.png"
+        alt="SENTINEL"
+        width={32}
+        height={32}
+        className="hidden size-8 shrink-0 transition-transform duration-200 group-hover:scale-105 dark:block"
+      />
+      <img
+        src="/sentinel-mark-dark.png"
+        alt="SENTINEL"
+        width={32}
+        height={32}
+        className="size-8 shrink-0 transition-transform duration-200 group-hover:scale-105 dark:hidden"
+      />
       <span className="font-mono text-sm font-bold tracking-[0.22em] text-slate-100 transition-colors duration-200 group-hover:text-emerald-300">
         SENTINEL
       </span>

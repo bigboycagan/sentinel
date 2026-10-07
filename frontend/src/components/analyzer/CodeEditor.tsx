@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { python } from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
 import { createTheme } from "@uiw/codemirror-themes";
 import { EditorView, Decoration, type DecorationSet } from "@codemirror/view";
 import { StateField, type Extension } from "@codemirror/state";
@@ -71,23 +72,36 @@ function findingHighlighter(findings: Finding[]): Extension {
   return [field];
 }
 
+/** Syntax mode for a language id, honouring JSX/TSX when the file name says so. */
+function languageExtension(language: string, fileName: string): Extension {
+  const jsx = /\.(jsx|tsx)$/i.test(fileName);
+  if (language === "typescript") return javascript({ typescript: true, jsx: true });
+  if (language === "javascript") return javascript({ jsx: true });
+  if (jsx) return javascript({ jsx: true });
+  return python();
+}
+
 export default function CodeEditor({
   value,
   onChange,
   findings = [],
   readOnly = false,
   height = "420px",
+  language = "python",
+  fileName = "",
 }: {
   value: string;
   onChange?: (next: string) => void;
   findings?: Finding[];
   readOnly?: boolean;
   height?: string;
+  language?: string;
+  fileName?: string;
 }) {
   // Re-keyed by the findings signature so markers refresh after each analysis.
   const extensions = useMemo(
-    () => [python(), findingHighlighter(findings)],
-    [findings],
+    () => [languageExtension(language, fileName), findingHighlighter(findings)],
+    [language, fileName, findings],
   );
 
   return (
@@ -110,7 +124,7 @@ export default function CodeEditor({
           autocompletion: false,
           searchKeymap: false,
         }}
-        placeholder="# Paste Python source here, or upload a .py file"
+        placeholder="# Paste source code here, or upload a file"
       />
     </div>
   );

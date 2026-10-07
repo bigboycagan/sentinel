@@ -12,6 +12,12 @@ import { apiGet } from "@/lib/api";
 import { CATEGORIES, SEVERITIES, SEVERITY_RANK } from "@/lib/severity";
 import type { RuleMeta } from "@/lib/types";
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  python: "Python",
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+};
+
 export default function Rules() {
   const { data, isError, isLoading } = useQuery({
     queryKey: ["rules"],
@@ -21,9 +27,15 @@ export default function Rules() {
 
   const [severity, setSeverity] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
+  const [ruleLanguage, setRuleLanguage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const rules = isError ? [] : (data ?? []);
+
+  const languages = useMemo(
+    () => Array.from(new Set(rules.map((rule) => rule.language))).sort(),
+    [rules],
+  );
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -31,6 +43,7 @@ export default function Rules() {
       .filter((rule) => {
         if (severity && rule.severity !== severity) return false;
         if (category && rule.category !== category) return false;
+        if (ruleLanguage && rule.language !== ruleLanguage) return false;
         if (
           term &&
           !`${rule.rule_id} ${rule.title} ${rule.description}`.toLowerCase().includes(term)
@@ -44,15 +57,16 @@ export default function Rules() {
           SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
           a.rule_id.localeCompare(b.rule_id),
       );
-  }, [rules, severity, category, search]);
+  }, [rules, severity, category, ruleLanguage, search]);
 
   return (
     <AppShell>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Rules</h1>
         <p className="mt-1.5 text-sm text-slate-400">
-          Every rule SENTINEL can match, straight from the engine&apos;s registry. Each has a unique
-          ID, a category, a severity and a remediation note.
+          Every rule SENTINEL can match across Python, JavaScript and TypeScript, straight from
+          the engine&apos;s registry. Each has a unique ID, a category, a severity and a
+          remediation note.
         </p>
       </div>
 
@@ -114,6 +128,27 @@ export default function Rules() {
               </Button>
             ))}
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={ruleLanguage === null ? "secondary" : "outline"}
+              size="xs"
+              onClick={() => setRuleLanguage(null)}
+              data-testid="rules-language-all"
+            >
+              All languages
+            </Button>
+            {languages.map((name) => (
+              <Button
+                key={name}
+                variant={ruleLanguage === name ? "secondary" : "outline"}
+                size="xs"
+                onClick={() => setRuleLanguage(ruleLanguage === name ? null : name)}
+                data-testid={`rules-language-${name}`}
+              >
+                {LANGUAGE_LABELS[name] ?? name}
+              </Button>
+            ))}
+          </div>
           <p className="font-mono text-xs text-slate-500" data-testid="rules-count">
             {visible.length} of {rules.length} rules
           </p>
@@ -144,6 +179,9 @@ export default function Rules() {
                     {rule.rule_id}
                   </Badge>
                   <SeverityBadge severity={rule.severity} />
+                  <Badge variant="secondary" className="text-[10px]">
+                    {LANGUAGE_LABELS[rule.language] ?? rule.language}
+                  </Badge>
                 </div>
                 <h3 className="mt-3 text-base font-medium tracking-tight text-slate-100">
                   {rule.title}

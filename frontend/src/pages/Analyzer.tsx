@@ -19,14 +19,27 @@ import ResultsDashboard from "@/components/analyzer/ResultsDashboard";
 import ErrorBanner from "@/components/common/ErrorBanner";
 import PrivacyNotice from "@/components/common/PrivacyNotice";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
-import { SAMPLES } from "@/lib/samples";
+import { SAMPLES, samplesForLanguage } from "@/lib/samples";
 import { apiErrorMessage } from "@/lib/severity";
-import type { AnalysisReport, AppSettings, HistorySummary } from "@/lib/types";
+import type {
+  AnalysisReport,
+  AppSettings,
+  HistorySummary,
+  LanguageOption,
+} from "@/lib/types";
 
 const DEFAULT_MAX_BYTES = 1_000_000;
 
+// Used until /api/languages answers, so the page still renders with no backend.
+const FALLBACK_LANGUAGES: LanguageOption[] = [
+  { id: "python", label: "Python", extensions: [".py", ".pyi"] },
+  { id: "javascript", label: "JavaScript", extensions: [".js", ".jsx", ".mjs", ".cjs"] },
+  { id: "typescript", label: "TypeScript", extensions: [".ts", ".tsx", ".mts", ".cts"] },
+];
+
 export default function Analyzer() {
   const queryClient = useQueryClient();
+  const [language, setLanguage] = useState("python");
   const [code, setCode] = useState(SAMPLES[0].code);
   const [fileName, setFileName] = useState(SAMPLES[0].fileName);
   const [uploaded, setUploaded] = useState<LoadedFile | null>(null);
@@ -41,9 +54,22 @@ export default function Analyzer() {
   });
   const maxBytes = settings?.max_file_size_bytes ?? DEFAULT_MAX_BYTES;
 
+  const { data: languageData } = useQuery({
+    queryKey: ["languages"],
+    queryFn: () => apiGet<LanguageOption[]>("/languages"),
+    retry: false,
+  });
+  const languages = languageData ?? FALLBACK_LANGUAGES;
+  const activeLanguage = languages.find((item) => item.id === language) ?? languages[0];
+  const languageLabels = Object.fromEntries(languages.map((item) => [item.id, item.label]));
+  // Uploads accept any supported extension; the extension then selects the
+  // language, so a .js file works even while Python is the active selection.
+  const allExtensions = languages.flatMap((item) => item.extensions);
+  const samples = samplesForLanguage(language);
+
   const analyze = useMutation({
     mutationFn: (payload: { code: string; file_name: string }) =>
-      apiPost<AnalysisReport>("/analyze", { ...payload, language: "python" }),
+      apiPost<AnalysisReport>("/analyze", { ...payload, language }),
     onSuccess: (result) => {
       setReport(result);
       setError(null);
@@ -63,7 +89,7 @@ export default function Analyzer() {
 
   const save = useMutation({
     mutationFn: () =>
-      apiPost<HistorySummary>("/history", { code, file_name: fileName, language: "python" }),
+      apiPost<HistorySummary>("/history", { code, file_name: fileName, language }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["history"] });
       toast.success("Analysis saved to history");
@@ -102,7 +128,8 @@ export default function Analyzer() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Analyzer</h1>
         <p className="mt-1.5 text-sm text-slate-400">
-          Paste or upload Python source. SENTINEL parses it locally — it is never executed.
+          Paste or upload Python, JavaScript or TypeScript source. SENTINEL parses it locally —
+          it is never executed.
         </p>
       </div>
 
@@ -121,16 +148,40 @@ export default function Analyzer() {
                   >
                     Language
                   </label>
-                  <Select value="python" onValueChange={() => undefined}>
+                  <Select
+                    value={language}
+                    onValueChange={(value: string) => {
+                      if (value === language) return;
+                      setLanguage(value);
+                      const next = samplesForLanguage(value)[0];
+                      if (next) {
+                        setCode(next.code);
+                        setFileName(next.fileName);
+                      }
+                      setUploaded(null);
+                      setReport(null);
+                      setError(null);
+                    }}
+                  >
                     <SelectTrigger
                       id="language-select"
                       className="mt-1.5"
                       data-testid="language-select"
                     >
-                      <SelectValue>{() => "Python"}</SelectValue>
+                      <SelectValue>
+                        {(value) => languageLabels[String(value)] ?? String(value)}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="python">Python</SelectItem>
+                      {languages.map((item) => (
+                        <SelectItem
+                          key={item.id}
+                          value={item.id}
+                          data-testid={`language-option-${item.id}`}
+                        >
+                          {item.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -146,6 +197,7 @@ export default function Analyzer() {
                     onValueChange={(value: string) => {
                       const sample = SAMPLES.find((item) => item.id === value);
                       if (!sample) return;
+                      setLanguage(sample.language);
                       setCode(sample.code);
                       setFileName(sample.fileName);
                       setUploaded(null);
@@ -161,8 +213,12 @@ export default function Analyzer() {
                       <SelectValue>{() => "Choose a snippet…"}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {SAMPLES.map((sample) => (
-                        <SelectItem key={sample.id} value={sample.id}>
+                      {samples.map((sample) => (
+                        <SelectItem
+                          key={sample.id}
+                          value={sample.id}
+                          data-testid={`sample-option-${sample.id}`}
+                        >
                           {sample.label}
                         </SelectItem>
                       ))}
@@ -175,8 +231,20 @@ export default function Analyzer() {
                 file={uploaded}
                 status={status}
                 maxBytes={maxBytes}
+                extensions={allExtensions}
+                hintExtensions={activeLanguage?.extensions}
                 onLoad={(name, size, text) => {
-                  setUploaded({ name, size });
+                  // The extension is authoritative: pick the matching language.
+                  const matched = languages.find((item) =>
+                    item.extensions.some((extension) => name.toLowerCase().endsWith(extension)),
+                  );
+                  const resolved = matched?.id ?? language;
+                  setLanguage(resolved);
+                  setUploaded({
+                    name,
+                    size,
+                    language: matched?.label ?? languageLabels[resolved] ?? resolved,
+                  });
                   setFileName(name);
                   setCode(text);
                   setReport(null);
@@ -192,7 +260,14 @@ export default function Analyzer() {
                 }}
               />
 
-              <CodeEditor value={code} onChange={setCode} findings={findings} height="420px" />
+              <CodeEditor
+                value={code}
+                onChange={setCode}
+                findings={findings}
+                height="420px"
+                language={language}
+                fileName={fileName}
+              />
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button

@@ -7,6 +7,7 @@ import { formatBytes } from "@/lib/severity";
 export interface LoadedFile {
   name: string;
   size: number;
+  language: string;
 }
 
 export default function FileUpload({
@@ -16,6 +17,8 @@ export default function FileUpload({
   onReject,
   onClear,
   maxBytes,
+  extensions,
+  hintExtensions,
 }: {
   file: LoadedFile | null;
   status: string;
@@ -23,14 +26,23 @@ export default function FileUpload({
   onReject: (message: string) => void;
   onClear: () => void;
   maxBytes: number;
+  /** Every extension the engine accepts — the file's own extension picks the analyzer. */
+  extensions: string[];
+  /** Extensions of the currently selected language, shown in the hint copy. */
+  hintExtensions?: string[];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const accept = extensions.join(",");
+  const hint = (hintExtensions?.length ? hintExtensions : extensions).slice(0, 3);
 
   // Files are read in the browser as TEXT and posted as a string — never executed.
   const handleFile = (picked: File) => {
-    if (!picked.name.toLowerCase().endsWith(".py")) {
-      onReject("Unsupported file type. SENTINEL currently supports Python files.");
+    const name = picked.name.toLowerCase();
+    if (!extensions.some((extension) => name.endsWith(extension))) {
+      onReject(
+        `Unsupported file type. SENTINEL currently supports: ${extensions.join(", ")}.`,
+      );
       return;
     }
     if (picked.size > maxBytes) {
@@ -66,7 +78,7 @@ export default function FileUpload({
       <input
         ref={inputRef}
         type="file"
-        accept=".py"
+        accept={accept}
         className="hidden"
         data-testid="file-input"
         onChange={(e) => {
@@ -87,7 +99,7 @@ export default function FileUpload({
               {file.name}
             </p>
             <p className="mt-0.5 text-xs text-slate-500" data-testid="uploaded-file-meta">
-              {formatBytes(file.size)} · Python
+              {formatBytes(file.size)} · {file.language}
             </p>
           </div>
           <Badge variant="outline" className="shrink-0" data-testid="uploaded-file-status">
@@ -108,7 +120,9 @@ export default function FileUpload({
           <div className="flex items-center gap-3">
             <Upload className="size-5 shrink-0 text-slate-500" />
             <div>
-              <p className="text-sm text-slate-300">Drop a .py file here</p>
+              <p className="text-sm text-slate-300">
+                Drop a {hint.join(" / ")} file here
+              </p>
               <p className="mt-0.5 text-xs text-slate-500">
                 Up to {formatBytes(maxBytes)} · never executed, parsed as text only
               </p>

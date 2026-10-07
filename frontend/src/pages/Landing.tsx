@@ -86,12 +86,12 @@ const PILLARS = [
   {
     icon: ShieldCheck,
     title: "Security analysis",
-    body: "AST-level detection of hardcoded credentials, eval/exec, shell injection, unsafe deserialization, weak crypto, insecure randomness, SQL injection and path traversal.",
+    body: "AST-level detection of hardcoded credentials, eval/exec, shell and command injection, unsafe deserialization, XSS sinks, weak crypto, insecure randomness, SQL injection and path traversal.",
   },
   {
     icon: Wrench,
     title: "Code quality",
-    body: "Unused variables and imports, unreachable code, excessive nesting, oversized functions and files, mutable default arguments, bare excepts and weak naming.",
+    body: "Unused variables and imports, unreachable code, excessive nesting, oversized functions and files, mutable defaults, empty catches, loose equality, var usage and weak naming.",
   },
   {
     icon: Activity,
@@ -133,7 +133,7 @@ export default function Landing() {
                 variant="outline"
                 className="border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] uppercase tracking-[0.18em] text-emerald-300"
               >
-                Static analysis · no AI
+                Python · JavaScript · TypeScript — no AI
               </Badge>
               <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-100 sm:text-5xl lg:text-6xl">
                 SENTINEL
@@ -143,8 +143,9 @@ export default function Landing() {
               </p>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-400">
                 Privacy-first static code analysis and security scanning for developers. SENTINEL
-                parses your source with Python&apos;s own AST and a deterministic rule engine —
-                every finding is reproducible, and nothing leaves this server.
+                parses Python, JavaScript and TypeScript with real AST engines and a
+                deterministic rule set — every finding is reproducible, and nothing leaves this
+                server.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
@@ -165,8 +166,8 @@ export default function Landing() {
               </div>
               <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-slate-800 pt-6">
                 {[
-                  ["32", "built-in rules"],
-                  ["4", "score categories"],
+                  ["70", "built-in rules"],
+                  ["3", "languages"],
                   ["0", "external calls"],
                 ].map(([value, label]) => (
                   <div key={label}>

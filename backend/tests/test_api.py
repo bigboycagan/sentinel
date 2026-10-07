@@ -45,10 +45,56 @@ def test_analyze_missing_code_is_422(client):
     assert client.post("/analyze", json={"file_name": "x.py"}).status_code == 422
 
 
-def test_upload_rejects_non_python(client):
+def test_upload_rejects_unsupported_extension(client):
     res = client.post("/analyze/upload", files={"file": ("notes.txt", b"print(1)", "text/plain")})
     assert res.status_code == 400
-    assert "Python" in res.json()["detail"]
+    detail = res.json()["detail"]
+    assert "Unsupported file type" in detail
+    assert ".py" in detail and ".ts" in detail
+
+
+def test_upload_analyzes_javascript_file(client):
+    source = b'export const r = (s) => eval(s);\n'
+    res = client.post("/analyze/upload", files={"file": ("v.js", source, "text/javascript")})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["language"] == "javascript"
+    assert "JS-SEC002" in {f["rule_id"] for f in body["findings"]}
+
+
+def test_upload_infers_typescript_from_extension(client):
+    source = b"export function parse(input: any): string {\n  return input.trim();\n}\n"
+    res = client.post("/analyze/upload", files={"file": ("util.ts", source, "text/plain")})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["language"] == "typescript"
+    assert "TS-QUA001" in {f["rule_id"] for f in body["findings"]}
+
+
+def test_languages_endpoint(client):
+    res = client.get("/languages")
+    assert res.status_code == 200
+    languages = res.json()
+    by_id = {item["id"]: item for item in languages}
+    assert {"python", "javascript", "typescript"} <= set(by_id)
+    assert ".tsx" in by_id["typescript"]["extensions"]
+    assert by_id["python"]["label"] == "Python"
+
+
+def test_analyze_javascript_via_json(client):
+    res = client.post(
+        "/analyze",
+        json={
+            "code": 'const apiKey = "ak_live_8f2n9d0a7s6f5g4h";\nexport default apiKey;\n',
+            "file_name": "config.js",
+            "language": "javascript",
+        },
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["language"] == "javascript"
+    assert body["scores"]["security"] < 100
+    assert "JS-SEC004" in {f["rule_id"] for f in body["findings"]}
 
 
 def test_upload_analyzes_python_file(client):

@@ -7,6 +7,9 @@ analyzes source code locally, on its own backend, using real static-analysis
 techniques — AST parsing, token analysis, complexity metrics and a custom rule
 engine.
 
+**Supported languages:** Python, JavaScript (incl. JSX) and TypeScript
+(incl. TSX) — **70 built-in rules** in total.
+
 > **AI is intentionally not included in v1.**
 >
 > There is no OpenAI, Gemini, Claude, Ollama or local LLM anywhere in the
@@ -20,13 +23,18 @@ service.**
 
 ## Features
 
-- **Security analysis** — hardcoded passwords and API keys, `eval`/`exec`,
-  unsafe `subprocess`/shell usage, unsafe deserialization (pickle/yaml), SQL
-  injection patterns, weak hashes, insecure randomness, disabled TLS
-  verification, path traversal, insecure temp files and more.
+- **Security analysis** — hardcoded passwords and API keys, `eval`/`exec` and
+  implied eval, unsafe `subprocess`/shell and command injection, unsafe
+  deserialization (pickle/yaml), SQL injection patterns, XSS sinks
+  (`innerHTML`, `document.write`, `dangerouslySetInnerHTML`), weak hashes,
+  insecure randomness, disabled TLS verification, path traversal, dynamic
+  module loading, `vm` execution, wildcard `postMessage`, credentials in web
+  storage, insecure temp files and more.
 - **Code quality** — unused variables and imports, unreachable code, excessive
   nesting, oversized functions and files, mutable default arguments, bare
-  `except`, wildcard imports, weak naming, unresolved TODO markers.
+  `except` / empty `catch`, wildcard imports, loose equality, `var` usage,
+  `debugger` statements, weak naming, unresolved TODO markers, plus TypeScript
+  checks for explicit `any` and `@ts-ignore` suppressions.
 - **Complexity** — cyclomatic complexity per function, average/maximum
   complexity, maximum nesting depth, function/class counts, line composition.
 - **Maintainability** — a radon-derived maintainability index computed from
@@ -37,13 +45,16 @@ service.**
   bar chart and category radar, measured metrics.
 - **Issue explorer** — filter by severity/category/rule, search, sort, and open
   any finding for the explanation, exact location, offending line and fix.
-- **Code editor** — CodeMirror 6 with Python syntax highlighting, line numbers,
-  a dark theme, and per-line severity stripes for every finding.
-- **File upload** — `.py` only, with graceful rejection, size limits, and
-  file name/size/language/status display.
+- **Code editor** — CodeMirror 6 with Python/JavaScript/TypeScript syntax
+  highlighting, line numbers, a dark theme, and per-line severity stripes for
+  every finding.
+- **File upload** — `.py`, `.pyi`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`,
+  `.tsx`, `.mts`, `.cts`, with graceful rejection, size limits, and
+  file name/size/language/status display. The extension selects the analyzer.
 - **History** — optionally save an analysis; the **report is stored, never your
   source code**. Delete one entry or clear everything.
-- **Rules browser** — the full catalog, served from the engine's own registry.
+- **Rules browser** — the full catalog, served from the engine's own registry,
+  filterable by severity, category and language.
 - **Settings** — theme, maximum file size, and per-rule enable/disable.
 
 ## Architecture
@@ -62,15 +73,19 @@ service.**
           ┌──────────────▼──────────────┐
           │  SENTINEL engine            │
           │  analyzers/engine.py        │
+          │  language registry          │
           └──────────────┬──────────────┘
+             ┌───────────┴───────────┐
+             │                       │
+   analyzers/python/        analyzers/javascript/
+   (ast + tokenize)         (tree-sitter JS/TS/TSX)
+             │                       │
+   parser · metrics · rules/   parser · metrics · rules/
+   (never executes code)       (never executes code)
+             │                       │
+             └───────────┬───────────┘
                          │
-   ┌─────────────────────┼─────────────────────┐
-   │                     │                     │
-parser.py            metrics.py           rules/*.py
-(ast.parse,       (complexity, Halstead,  (SEC / QUA /
- never exec)       nesting, MI)            CPL / MNT)
-   │                     │                     │
-   └─────────────────────┴─────────────────────┘
+              analyzers/report.py   (shared assembly)
                          │
                    scoring.py  →  AnalysisResult
                          │
@@ -94,12 +109,20 @@ fully functional without it.
 
 Each language is a package under `analyzers/<language>/` exposing an analyzer
 class with `language`, `extensions` and `analyze(...)`. Register it in
-`_ANALYZERS` in `analyzers/engine.py` — no core, scoring or API changes needed.
+`_ANALYZERS` in `analyzers/engine.py` — and that is the only wiring required.
+The rules catalog, upload validation, the `/api/languages` endpoint and the
+frontend language selector are all derived from that map, and report assembly
+plus scoring are shared via `analyzers/report.py`.
+
+The JavaScript package is the worked example of a second language: it reuses
+the shared `Rule`/`RuleHit` contract and serves both JavaScript and TypeScript
+from one analyzer, with TypeScript-only rules declared as
+`language="typescript"`.
 
 ### Adding a rule
 
 Append one `Rule(...)` to the relevant list in
-`analyzers/python/rules/{security,quality,complexity,maintainability}.py`:
+`analyzers/<language>/rules/{security,quality,complexity,maintainability}.py`:
 
 ```python
 Rule(
@@ -138,7 +161,8 @@ fabricated zero.
 |---|---|
 | Frontend | React 19, TypeScript (strict), Vite, Tailwind CSS v4, shadcn/ui, TanStack Query, CodeMirror 6, Recharts |
 | Backend | Python 3.11, FastAPI, Pydantic v2, uvicorn |
-| Analysis | Python `ast`, `tokenize`, custom metrics + custom rule engine |
+| Analysis (Python) | Python `ast` + `tokenize`, custom metrics + custom rule engine |
+| Analysis (JS/TS) | `tree-sitter` with the JavaScript/TypeScript/TSX grammars — a pure parsing library with no evaluation facility |
 | Storage | SQLite (history + settings) — structured for a later PostgreSQL swap |
 | Tests | pytest (engine + API), Playwright (e2e scaffold) |
 
@@ -182,7 +206,8 @@ production.
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/api/analyze` | Analyze pasted source (JSON) |
-| `POST` | `/api/analyze/upload` | Analyze an uploaded `.py` file (multipart) |
+| `POST` | `/api/analyze/upload` | Analyze an uploaded file (multipart); the extension selects the analyzer |
+| `GET` | `/api/languages` | Languages the engine supports, with their extensions |
 | `GET` | `/api/rules` | The full rule catalog |
 | `GET` | `/api/history` | Saved analyses for this session |
 | `POST` | `/api/history` | Analyze and save a report |
@@ -200,20 +225,31 @@ cd frontend && yarn typecheck         # TypeScript (strict)
 cd frontend && yarn lint              # oxlint
 ```
 
-The engine suite (`backend/tests/test_engine.py`) tests the analysis engine
-**independently of the UI and of HTTP**: detection of hardcoded passwords,
-`eval`, `exec`, unsafe deserialization, SQL injection, shell usage, weak
-hashes, insecure randomness; complexity calculation; empty source; invalid
-Python; safe Python; the scoring system and severity escalation.
+The engine suites test the analysis engine **independently of the UI and of
+HTTP**:
+
+- `backend/tests/test_engine.py` — Python: hardcoded passwords, `eval`,
+  `exec`, unsafe deserialization, SQL injection, shell usage, weak hashes,
+  insecure randomness; complexity calculation; empty source; invalid Python;
+  safe Python; the scoring system and severity escalation.
+- `backend/tests/test_engine_javascript.py` — JavaScript/TypeScript: the same
+  security classes plus XSS sinks, implied eval, command injection, web-storage
+  credentials; quality rules; complexity and nesting metrics; TS-only rules;
+  JSX/TSX parsing; invalid sources; clean sources; determinism.
+- `backend/tests/test_api.py` — the HTTP surface for every language.
 
 ## Security considerations
 
 Uploaded source is treated as **untrusted input**:
 
-- **Never executed.** `ast.parse` builds a tree; nothing is `eval`'d, `exec`'d,
-  imported or run. No shell is invoked on user content.
+- **Never executed.** `ast.parse` (Python) and `tree-sitter` (JS/TS) build
+  syntax trees; nothing is `eval`'d, `exec`'d, imported or run. tree-sitter is
+  a parser with no evaluation facility, and no Node.js runtime is involved. No
+  shell is invoked on user content.
 - **No `eval`/`exec` on user input** anywhere in SENTINEL itself.
-- **File type validation** — `.py` only, rejected on both client and server.
+- **File type validation** — only registered extensions are accepted, rejected
+  on both client and server; the extension, not a client-supplied field,
+  selects the analyzer.
 - **File size limits** — enforced server-side and clamped (10 KB–10 MB).
 - **Safe parsing** — `RecursionError`/`MemoryError`/`ValueError` from hostile
   input become structured parse errors, not crashes.
@@ -236,12 +272,12 @@ Uploaded source is treated as **untrusted input**:
 
 ## Roadmap
 
-**v1 (this release)** — Python analyzer, AST rule engine, security/quality/
-complexity/maintainability rules, deterministic scoring, dashboard, editor,
-upload, issue explorer, rule browser, history, settings.
+**v1** — Python analyzer, AST rule engine, security/quality/complexity/
+maintainability rules, deterministic scoring, dashboard, editor, upload, issue
+explorer, rule browser, history, settings.
 
-**v2** — more languages (JavaScript, TypeScript, Java, C#, Go), more security
-rules, GitHub repository scanning, pull request analysis.
+**v2 (in progress)** — ✅ JavaScript and TypeScript analyzers; next: Java, C#,
+Go, more security rules, GitHub repository scanning, pull request analysis.
 
 **v3** — optional **local** AI integration (opt-in, off by default).
 

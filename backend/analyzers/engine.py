@@ -2,14 +2,17 @@
 
 The engine is the seam for future work:
   * a new language = a new `analyzers/<lang>/` package whose analyzer class is
-    registered in `_ANALYZERS` — no core changes;
+    registered in `_ANALYZERS` — no core, scoring or API changes;
   * a future AI layer (`intelligence.Explainer`) would consume the
     `AnalysisReport` this function returns. v1 deliberately ships without it.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from analyzers.base import Rule
+from analyzers.javascript.analyzer import JAVASCRIPT, TYPESCRIPT, JavaScriptAnalyzer
 from analyzers.python.analyzer import PythonAnalyzer
 
 
@@ -21,30 +24,80 @@ class UnsupportedLanguageError(ValueError):
     """Raised when no analyzer is registered for the requested language."""
 
 
+# Every registered language. Adding one here is the only wiring a new
+# analyzer needs: the rules catalog, upload validation, the /languages
+# endpoint and the frontend selector are all derived from this map.
 _ANALYZERS = {
     PythonAnalyzer.language: PythonAnalyzer(),
+    JAVASCRIPT: JavaScriptAnalyzer(JAVASCRIPT),
+    TYPESCRIPT: JavaScriptAnalyzer(TYPESCRIPT),
+}
+
+_LABELS = {
+    "python": "Python",
+    JAVASCRIPT: "JavaScript",
+    TYPESCRIPT: "TypeScript",
 }
 
 
-def get_analyzer(language: str) -> PythonAnalyzer:
+@dataclass(frozen=True)
+class LanguageInfo:
+    id: str
+    label: str
+    extensions: tuple[str, ...]
+
+
+def supported_languages() -> list[LanguageInfo]:
+    return [
+        LanguageInfo(id=key, label=_LABELS.get(key, key.title()), extensions=analyzer.extensions)
+        for key, analyzer in _ANALYZERS.items()
+    ]
+
+
+def all_extensions() -> tuple[str, ...]:
+    seen: list[str] = []
+    for analyzer in _ANALYZERS.values():
+        for extension in analyzer.extensions:
+            if extension not in seen:
+                seen.append(extension)
+    return tuple(seen)
+
+
+def get_analyzer(language: str):
     analyzer = _ANALYZERS.get((language or "").strip().lower())
     if analyzer is None:
-        raise UnsupportedLanguageError(
-            "Unsupported language. SENTINEL v1 currently supports Python."
-        )
+        supported = ", ".join(info.label for info in supported_languages())
+        raise UnsupportedLanguageError(f"Unsupported language. SENTINEL supports: {supported}.")
     return analyzer
 
 
+def language_for_file(file_name: str) -> str | None:
+    """Infer the language from a file extension, or None when unsupported."""
+    lower = (file_name or "").lower()
+    for key, analyzer in _ANALYZERS.items():
+        if lower.endswith(analyzer.extensions):
+            return key
+    return None
+
+
 def supports_extension(file_name: str) -> bool:
-    lower = file_name.lower()
-    return any(lower.endswith(ext) for analyzer in _ANALYZERS.values() for ext in analyzer.extensions)
+    return language_for_file(file_name) is not None
 
 
 def all_rules() -> list[Rule]:
-    """Every registered rule across every language (catalog source of truth)."""
+    """Every registered rule, de-duplicated by rule id (catalog source of truth).
+
+    Analyzers may share rule objects — the JS and TS analyzers deliberately
+    reuse the JavaScript rule set — so the catalog dedupes.
+    """
     rules: list[Rule] = []
+    seen: set[str] = set()
     for analyzer in _ANALYZERS.values():
-        rules.extend(analyzer.rules)
+        for rule in analyzer.rules:
+            if rule.rule_id in seen:
+                continue
+            seen.add(rule.rule_id)
+            rules.append(rule)
     return rules
 
 

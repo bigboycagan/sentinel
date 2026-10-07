@@ -29,12 +29,15 @@ implementation is expected to uphold:
 
 | Guarantee | Where it is enforced |
 |---|---|
-| Analyzed code is **never executed** — parsed to an AST only | `backend/analyzers/python/parser.py` |
+| Analyzed code is **never executed** — parsed to an AST only | `backend/analyzers/python/parser.py` (`ast.parse`), `backend/analyzers/javascript/parser.py` (tree-sitter) |
+| No JavaScript runtime is involved in JS/TS analysis | tree-sitter is a C parsing library with no evaluation facility; Node.js is never invoked by the backend |
 | No `eval`/`exec`/`compile` on user input | entire `backend/analyzers/` tree |
 | No shell invoked on user content | no `subprocess` use in the analysis path |
-| File type validation (`.py` only) | `backend/routers/analysis.py`, `frontend/src/components/analyzer/FileUpload.tsx` |
+| File type validation (registered extensions only) | `backend/routers/analysis.py` (`language_for_file`), `frontend/src/components/analyzer/FileUpload.tsx` |
+| The analyzer is chosen by file extension, not by client-supplied input | `backend/routers/analysis.py` |
 | Server-side file size limits, clamped 10 KB–10 MB | `backend/routers/analysis.py`, `backend/lib/store.py` |
-| Hostile input (nesting bombs, null bytes) degrades to a parse error | `backend/analyzers/python/parser.py` |
+| A second absolute parser-input cap | `backend/analyzers/javascript/parser.py` (`MAX_PARSE_BYTES`) |
+| Hostile input (nesting bombs, null bytes, syntax errors) degrades to a parse error | `backend/analyzers/*/parser.py` |
 | Request body validation | Pydantic v2 models in `backend/models/` |
 | File name sanitization | `sanitize_file_name` in `backend/routers/analysis.py` |
 | Rate limiting per client | `backend/lib/rate_limit.py` |
